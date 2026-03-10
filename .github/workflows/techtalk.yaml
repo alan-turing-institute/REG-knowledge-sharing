@@ -1,0 +1,37 @@
+# Generate index.html @ gh-pages branch, containing information about the next
+# tech talk.
+
+on:
+  gollum:                   # Any time the wiki is updated
+  workflow_dispatch:        # Any time the action is manually triggered via GitHub website
+  schedule:
+    - cron: '25 1 * * 2,3'  # 1:25am on Tuesdays and Wednesdays
+                            # The Tuesday run is to change the title to "Today's tech talk",
+                            # and the Wednesday run updates it to point to next week's.
+                            # (The time is arbitrarily chosen, but should not be xx:00, as
+                            # GitHub Actions tends to be busy then)
+
+jobs:
+  make-website:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout wiki git repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki/
+
+      - name: Generate the website
+        run: python .github/workflows/techtalk/techtalk.py wiki/Lunchtime-Tech-Talks.md web/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web
+          user_name: "GitHub Actions"
+          user_email: "github-actions[bot]@users.noreply.github.com"
